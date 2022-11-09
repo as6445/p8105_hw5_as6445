@@ -72,18 +72,34 @@ Now run prop.test for each of the cities in your dataset, and extract both the p
 homicide_prop = homicide_data %>% 
   mutate(
     proportions = map2(.x = unsolved, .y = total, ~prop.test(x = .x, n = .y)),
-    tidied = map(.x = prop_tests, ~broom::tidy(.x))
+    tidied = map(.x = proportions, ~broom::tidy(.x))
   ) %>% 
   select(-proportions) %>% 
-  unnest(-tidied) %>% 
+  unnest(tidied) %>% 
   select(city_state, estimate, conf.low,conf.high)
 ```
 
 Create a plot that shows the estimates and CIs for each city – check out geom_errorbar for a way to add error bars based on the upper and lower limits. Organize cities according to the proportion of unsolved homicides.
 
 ```{r plot}
+homicide_plot= homicide_prop %>% 
+  ggplot(aes(x = fct_reorder(city_state, estimate), y = estimate)) + 
+  geom_point() +  
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
+ggsave(path = "results", "homicide_plot.pdf")
 ```
 
-
 ## Problem 3
+
+First set the following design elements:
+
+Fix n=30
+Fix σ=5
+
+Set μ=0. Generate 5000 datasets from the model
+```{r}
+simfun = function(samp_size = 30, mu = 0, sigma = 5){
+```
+
