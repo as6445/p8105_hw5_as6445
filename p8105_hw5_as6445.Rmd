@@ -139,67 +139,122 @@ First set the following design elements:
 Fix n=30
 Fix σ=5
 
-Set μ=0. Generate 5000 datasets from the model
+Set μ=0. 
 
 #### Create Simulation
 ```{r simulate}
-sim_data = function(n = 30, mu = 0, sigma = 5){
-    x = rnorm(n, mean = mu, sd = sigma)
-    ttest = t.test(x, conf.int = 0.95) %>% broom::tidy()
-    ttest
+simulations = function(mu=0, n=30, sigma = 5) {
+  
+  sim_data = tibble(
+    x = rnorm(n , mean=mu, sd = sigma),
+  )
+  
+    t.test(sim_data) %>%
+    broom::tidy() %>%
+    select(estimate,p.value)
 }
-output = vector("list", 5000)
-for (i in 1:5000) {
-  output[[i]] = problem3()
-}
-
-output %>% bind_rows() %>% head()
 ```
 
-#### Create plot
+Generate 5000 datasets from the model:
+
+```{r}
+expand_grid(
+  means = 0,
+  iteration = 1:5000
+) %>%
+  mutate(
+    estimate_df = map(means, simulations)
+  ) %>%
+  unnest(estimate_df)
+```
+
+Simulate for μ={1,2,3,4,5,6}:
+
+```{r}
+sim_results_df = 
+  expand_grid(
+    means = c(1, 2, 3, 4, 5, 6),
+    iteration = 1:5000
+  ) %>% 
+  mutate(
+    estimate_df = map(means, simulations)
+  ) %>%
+  unnest(estimate_df)
+```
+
+#### Create first plot
 
 Make a plot showing the proportion of times the null was rejected (the power of the test) on the y axis and the true value of μ on the x axis. Describe the association between effect size and power.
 
 ```{r power}
-sim_mu = function(set){
-  output = vector("list", 5000)
-  for (i in 1:5000) {
-     output[[i]] = sim_data(mu = set)
-  }
-
-power = 
-    output %>% 
-    bind_rows() %>% 
-    janitor::clean_names() %>% 
-    select(estimate, p_value) %>% 
-    filter(p_value < 0.05) %>% 
-    count()
-  
-  power
-}
-
-powertest =
-  tibble(
-    sample_mu = c(0, 1, 2, 3, 4, 5, 6),
-    reject= map(sample_mu, sim_mu)
-  ) %>%  
-  unnest(reject) %>% 
-  mutate(powers = n/5000)
-
-bullet1 %>% 
-ggplot(aes(x = sample_mu, y = powers)) +
-  geom_point(aes(color = sample_mu), alpha = .5, size = 3) +
-  geom_smooth(alpha = .5, size = 0.5) +
+plot1 = 
+  sim_results_df %>%
+  group_by(means) %>%
+  summarize(
+    proportion = sum(p.value < 0.05, na.rm = TRUE)/5000
+  ) %>%
+  ggplot(aes(x = means, y = proportion)) + 
+    geom_point() + 
   labs(
-    x = "The true value of mu",
-    y = "Proportion of times the null was rejected (the power of the test)",
-    title = "The power of the test for different true mu"
-    )
+    title = "Power of t-test for each true mean value",
+    x = "True mean",
+    y = "Power"
+  )
+
+plot1
+
+ggsave("results/plot1.pdf", plot1, width = 20, height = 10)
 ```
+
+When the true value of mu increases, power also increases.
+
+#### Create another plot
+
 Make a plot showing the average estimate of μ^ on the y axis and the true value of μ on the x axis. Make a second plot (or overlay on the first) the average estimate of μ^ only in samples for which the null was rejected on the y axis and the true value of μ on the x axis. Is the sample average of μ^ across tests for which the null is rejected approximately equal to the true value of μ? Why or why not?
 
-```{r}
-
+```{r bullet2}
+sim_data %>% 
+   summarize(
+      mu_hat_all = mean(x),
+      mu_hat_rej = case_when(
+        pull(sim_t_test, p_value) < 0.05 ~ mean(x),
+        pull(sim_t_test, p_value) >= 0.05 ~ as.numeric("")
+      )
+    )
+}
+compare_all_reject = function(set){
+  output_mu_hat = vector("list", 5000)
+  for (i in 1:5000) {
+     output_mu_hat[[i]] = sim_mu_hat(mu = set)
+     }
+  
+  output_mu_hat %>% 
+    bind_rows() %>% 
+    summarize(
+      all_sample = mean(mu_hat_all, na.rm = T),
+      reject_sample = mean(mu_hat_rej, na.rm = T)
+    )
+}
+mean_muhat =
+  tibble(
+    true_mu = c(0, 1, 2, 3, 4, 5, 6),
+    hat = map(true_mu, compare_all_reject)
+  ) %>%  
+  unnest(hat) %>% 
+  pivot_longer(
+    all_sample:reject_sample,
+    names_to = "samples",
+    values_to = "average_estimate"
+  )
+mean_muhat %>% 
+ ggplot(aes(x = true_mu, y = average_estimate, group = samples)) +
+  geom_point(aes(color = samples), alpha = .5, size = 2) +
+  geom_smooth(aes(color = samples), alpha = .5, size = 0.5) +
+  labs(
+    x = "The true value of μ",
+    y = "The average estimate of μ^",
+    title = "Compare the average estimate of μ^ of all sample and reject-null-sample"
+    )
 ```
 
 
