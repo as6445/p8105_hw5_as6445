@@ -140,19 +140,66 @@ Fix n=30
 Fix σ=5
 
 Set μ=0. Generate 5000 datasets from the model
-```{r}
-problem3 = function(n = 30, mu = 0, sigma = 5){
-  
-  sim_data = tibble(
-    x = rnorm(n=n, mean = mu, sd = sigma),
-  )
-  
-  sim_data %>% 
-    summarize(
-      mu_hat = mean(x),
-      sigma_hat = sd(x)
-    )
+
+#### Create Simulation
+```{r simulate}
+sim_data = function(n = 30, mu = 0, sigma = 5){
+    x = rnorm(n, mean = mu, sd = sigma)
+    ttest = t.test(x, conf.int = 0.95) %>% broom::tidy()
+    ttest
 }
-  
+output = vector("list", 5000)
+for (i in 1:5000) {
+  output[[i]] = problem3()
+}
+
+output %>% bind_rows() %>% head()
 ```
+
+#### Create plot
+
+Make a plot showing the proportion of times the null was rejected (the power of the test) on the y axis and the true value of μ on the x axis. Describe the association between effect size and power.
+
+```{r power}
+sim_mu = function(set){
+  output = vector("list", 5000)
+  for (i in 1:5000) {
+     output[[i]] = sim_data(mu = set)
+  }
+
+power = 
+    output %>% 
+    bind_rows() %>% 
+    janitor::clean_names() %>% 
+    select(estimate, p_value) %>% 
+    filter(p_value < 0.05) %>% 
+    count()
+  
+  power
+}
+
+powertest =
+  tibble(
+    sample_mu = c(0, 1, 2, 3, 4, 5, 6),
+    reject= map(sample_mu, sim_mu)
+  ) %>%  
+  unnest(reject) %>% 
+  mutate(powers = n/5000)
+
+bullet1 %>% 
+ggplot(aes(x = sample_mu, y = powers)) +
+  geom_point(aes(color = sample_mu), alpha = .5, size = 3) +
+  geom_smooth(alpha = .5, size = 0.5) +
+  labs(
+    x = "The true value of mu",
+    y = "Proportion of times the null was rejected (the power of the test)",
+    title = "The power of the test for different true mu"
+    )
+```
+Make a plot showing the average estimate of μ^ on the y axis and the true value of μ on the x axis. Make a second plot (or overlay on the first) the average estimate of μ^ only in samples for which the null was rejected on the y axis and the true value of μ on the x axis. Is the sample average of μ^ across tests for which the null is rejected approximately equal to the true value of μ? Why or why not?
+
+```{r}
+
+```
+
 
