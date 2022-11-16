@@ -229,14 +229,16 @@ overlay =
     estimate_mean = mean(estimate)
   ) %>%
   ggplot(aes(x = means, y = estimate_mean, color = "rejected samples")) + 
-  geom_point() + 
+  geom_point() +
+  geom_line() +
   geom_point(data = estimateplot, aes(color = "all samples")) +
+  geom_line(data = estimateplot, aes(color = "all samples")) +
   scale_color_manual(
     name = "Legend",
     breaks = c("rejected samples", "all samples"),
     values = c("rejected samples" = "red", "all samples" = "blue")) +
   labs(
-    title = "Mean estimate for true means comparing samples when null was rejected and for all samples",
+    title = "Mean estimate for true means comparing samples when rejected null and for all samples",
     x = "True mean",
     y = "Mean estimate",
   )
