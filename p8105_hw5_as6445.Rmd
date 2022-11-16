@@ -191,12 +191,13 @@ plot1 =
   sim_results_df %>%
   group_by(means) %>%
   summarize(
-    proportion = sum(p.value < 0.05, na.rm = TRUE)/5000
+    rejected = sum(p.value < 0.05, na.rm = TRUE)/5000
   ) %>%
-  ggplot(aes(x = means, y = proportion)) + 
-    geom_point() + 
+  ggplot(aes(x = means, y = rejected)) + 
+    geom_point(alpha = .5, size = 3) + 
+    geom_line()
   labs(
-    title = "Power of t-test for each true mean value",
+    title = "Power of t-test for true mean value",
     x = "True mean",
     y = "Power"
   )
@@ -211,50 +212,3 @@ When the true value of mu increases, power also increases.
 #### Create another plot
 
 Make a plot showing the average estimate of μ^ on the y axis and the true value of μ on the x axis. Make a second plot (or overlay on the first) the average estimate of μ^ only in samples for which the null was rejected on the y axis and the true value of μ on the x axis. Is the sample average of μ^ across tests for which the null is rejected approximately equal to the true value of μ? Why or why not?
-
-```{r bullet2}
-sim_data %>% 
-   summarize(
-      mu_hat_all = mean(x),
-      mu_hat_rej = case_when(
-        pull(sim_t_test, p_value) < 0.05 ~ mean(x),
-        pull(sim_t_test, p_value) >= 0.05 ~ as.numeric("")
-      )
-    )
-}
-compare_all_reject = function(set){
-  output_mu_hat = vector("list", 5000)
-  for (i in 1:5000) {
-     output_mu_hat[[i]] = sim_mu_hat(mu = set)
-     }
-  
-  output_mu_hat %>% 
-    bind_rows() %>% 
-    summarize(
-      all_sample = mean(mu_hat_all, na.rm = T),
-      reject_sample = mean(mu_hat_rej, na.rm = T)
-    )
-}
-mean_muhat =
-  tibble(
-    true_mu = c(0, 1, 2, 3, 4, 5, 6),
-    hat = map(true_mu, compare_all_reject)
-  ) %>%  
-  unnest(hat) %>% 
-  pivot_longer(
-    all_sample:reject_sample,
-    names_to = "samples",
-    values_to = "average_estimate"
-  )
-mean_muhat %>% 
- ggplot(aes(x = true_mu, y = average_estimate, group = samples)) +
-  geom_point(aes(color = samples), alpha = .5, size = 2) +
-  geom_smooth(aes(color = samples), alpha = .5, size = 0.5) +
-  labs(
-    x = "The true value of μ",
-    y = "The average estimate of μ^",
-    title = "Compare the average estimate of μ^ of all sample and reject-null-sample"
-    )
-```
-
-
