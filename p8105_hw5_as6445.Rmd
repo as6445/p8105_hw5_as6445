@@ -209,6 +209,43 @@ ggsave("results/plot1.pdf", plot1, width = 20, height = 10)
 
 When the true value of mu increases, power also increases.
 
-#### Create another plot
+#### Create some more plots!
 
-Make a plot showing the average estimate of μ^ on the y axis and the true value of μ on the x axis. Make a second plot (or overlay on the first) the average estimate of μ^ only in samples for which the null was rejected on the y axis and the true value of μ on the x axis. Is the sample average of μ^ across tests for which the null is rejected approximately equal to the true value of μ? Why or why not?
+Make a plot showing the average estimate of μ on the y axis and the true value of μ on the x axis. Make a second plot (or overlay on the first) the average estimate of μ only in samples for which the null was rejected on the y axis and the true value of μ on the x axis. 
+
+```{r estimates}
+estimateplot=
+  sim_results_df %>%
+  group_by(means)%>%
+    summarize(estimate_mean=mean(estimate))
+```
+
+```{r overlay}
+overlay = 
+  sim_results_df %>%
+  filter(p.value < 0.05) %>%
+  group_by(means) %>%
+  summarize(
+    estimate_mean = mean(estimate)
+  ) %>%
+  ggplot(aes(x = means, y = estimate_mean, color = "rejected samples")) + 
+  geom_point() + 
+  geom_point(data = estimateplot, aes(color = "all samples")) +
+  scale_color_manual(
+    name = "Legend",
+    breaks = c("rejected samples", "all samples"),
+    values = c("rejected samples" = "red", "all samples" = "blue")) +
+  labs(
+    title = "Mean estimate for true means comparing samples when null was rejected and for all samples",
+    x = "True mean",
+    y = "Mean estimate",
+  )
+
+overlay
+
+ggsave("results/overlayplot.pdf", overlay, width = 20, height = 10)
+```
+
+Based on the plot, when the true mu is 0, the estimate mu of rejecting the null are greater than the true value of mu.
+When the true value of mu increases, the averages of mu when the null is rejected gets closer to the true mu until the true value of mu is 4. After this point, the averages of mu rejecting the null and the true value of mu are very close together. 
+
