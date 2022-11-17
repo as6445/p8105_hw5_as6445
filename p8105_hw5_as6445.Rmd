@@ -1,7 +1,7 @@
 ---
 title: "p8105_hw5_as6445"
 author: "Ayako Sekiya"
-date: "2022-11-05"
+date: "2022-11-16"
 output: github_document
 ---
 
@@ -250,4 +250,3 @@ ggsave("results/overlayplot.pdf", overlay, width = 20, height = 10)
 
 Based on the plot, when the true mu is 0, the estimate mu of rejecting the null are greater than the true value of mu.
 When the true value of mu increases, the averages of mu when the null is rejected gets closer to the true mu until the true value of mu is 4. After this point, the averages of mu rejecting the null and the true value of mu are very close together. 
-
