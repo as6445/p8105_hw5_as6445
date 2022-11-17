@@ -82,7 +82,10 @@ homicide =
   read_csv(file = "./data/homicide-data.csv")
 ```
 There are `r nrow(homicide)` observations and `r ncol(homicide)` columns in the homicide data. The variables included are as following: `r colnames(homicide)`.  
+
 Create a city_state variable (e.g. “Baltimore, MD”) and then summarize within cities to obtain the total number of homicides and the number of unsolved homicides (those for which the disposition is “Closed without arrest” or “Open/No arrest”).
+
+I summarized the count by using `group_by()` and `count()`. 
 
 ```{r count and create}
 homicide_data= homicide %>% 
@@ -173,7 +176,7 @@ Simulate for μ={1,2,3,4,5,6}:
 ```{r}
 sim_results_df = 
   expand_grid(
-    means = c(1, 2, 3, 4, 5, 6),
+    means = c(1:6),
     iteration = 1:5000
   ) %>% 
   mutate(
@@ -207,7 +210,7 @@ plot1
 ggsave("results/plot1.pdf", plot1, width = 20, height = 10)
 ```
 
-When the true value of mu increases, power also increases.
+When the effect size increases, power also increases.
 
 #### Create some more plots!
 
@@ -250,3 +253,5 @@ ggsave("results/overlayplot.pdf", overlay, width = 20, height = 10)
 
 Based on the plot, when the true mu is 0, the estimate mu of rejecting the null are greater than the true value of mu.
 When the true value of mu increases, the averages of mu when the null is rejected gets closer to the true mu until the true value of mu is 4. After this point, the averages of mu rejecting the null and the true value of mu are very close together. 
+
+When mu=1 the effect size is really small and power will also be small, so we will less likely have estimates that reject the null. As mu increases, effect size also increases, so we will be more likely to reject the null.
